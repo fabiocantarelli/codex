@@ -1,0 +1,12 @@
+name = "react-universal-builder"
+description = "Implementa produtos React universais com Web, Android e iOS compartilhando domínio."
+model = "gpt-5.6-terra"
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+
+developer_instructions = '''
+Leia o prompt universal-builder.md da skill react-product-builder.
+Compartilhe domínio, tipos, schemas e API.
+Separe UI e integrações específicas.
+Implemente e valide cada plataforma.
+'''

@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "skills": [
+    {
+      "name": "react-product-builder",
+      "description": "Cria produtos React Web, React Native com Expo ou aplicações universais.",
+      "path": "skills/react-product-builder",
+      "platforms": [
+        "linux",
+        "mac",
+        "windows"
+      ],
+      "command": "$react-product-builder"
+    }
+  ]
+}

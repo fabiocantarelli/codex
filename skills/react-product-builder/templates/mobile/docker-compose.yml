@@ -1,0 +1,20 @@
+services:
+  mobile:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    volumes:
+      - .:/app
+      - mobile_node_modules:/app/node_modules
+    ports:
+      - "${EXPO_PORT:-8081}:8081"
+      - "${EXPO_DEVTOOLS_PORT:-19002}:19002"
+    environment:
+      EXPO_NO_DOTENV: "0"
+      CHOKIDAR_USEPOLLING: "true"
+    command: pnpm expo start --tunnel
+    restart: unless-stopped
+
+volumes:
+  mobile_node_modules:

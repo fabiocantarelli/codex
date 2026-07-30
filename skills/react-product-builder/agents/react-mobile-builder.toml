@@ -1,0 +1,12 @@
+name = "react-mobile-builder"
+description = "Implementa aplicativos React Native com Expo, Expo Router e NativeWind."
+model = "gpt-5.6-terra"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+
+developer_instructions = '''
+Leia o prompt mobile-builder.md da skill react-product-builder.
+Use Docker para dependências e validações.
+Prepare execução por Expo.
+Implemente, teste, valide e corrija.
+'''
