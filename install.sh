@@ -1,25 +1,99 @@
 #!/bin/sh
-set -eu
+#
+# Codex Skills Installer
+#
+# Execute com curl:
+#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" react-product-builder
+#
+# Execute com wget:
+#   sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" react-product-builder
+#
+# Também é possível baixar e inspecionar antes de executar:
+#   curl -fsSLO https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh
+#   sh install.sh react-product-builder
+#
+# Variáveis suportadas:
+#   REPO         - repositório GitHub no formato owner/repository
+#                  (padrão: fabiocantarelli/codex)
+#   REMOTE       - URL completa do repositório Git
+#   BRANCH       - branch ou tag a instalar (padrão: main)
+#   CODEX_HOME   - diretório de configuração do Codex (padrão: $HOME/.codex)
+#   AGENTS_HOME  - diretório global de agents/skills (padrão: $HOME/.agents)
+#   SKILL        - nome da skill, como alternativa ao argumento posicional
+#   UNATTENDED   - yes para desabilitar perguntas interativas
+#   KEEP_EXISTING - yes para preservar instalação existente e encerrar
+#   RUN_VALIDATION - no para não executar o validador da skill
+#
+# Opções:
+#   --unattended    não solicita confirmação
+#   --keep-existing preserva a instalação atual
+#   --force          substitui a skill sem confirmação, mantendo backup
+#   --branch <ref>   instala outra branch ou tag
+#   --help           exibe a ajuda
+#
 
-REPO_OWNER="${CODEX_SKILLS_REPO_OWNER:-fabiocantarelli}"
-REPO_NAME="${CODEX_SKILLS_REPO_NAME:-codex}"
-REPO_REF="${CODEX_SKILLS_REPO_REF:-main}"
-ARCHIVE_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}/archive/refs/heads/${REPO_REF}.tar.gz"
+set -e
+
+USER=${USER:-$(id -u -n 2>/dev/null || printf 'unknown')}
+HOME=${HOME:-$(getent passwd "$USER" 2>/dev/null | cut -d: -f6)}
+HOME=${HOME:-$(eval echo ~"$USER")}
+
+REPO=${REPO:-fabiocantarelli/codex}
+REMOTE=${REMOTE:-https://github.com/${REPO}.git}
+BRANCH=${BRANCH:-main}
+CODEX_HOME=${CODEX_HOME:-$HOME/.codex}
+AGENTS_HOME=${AGENTS_HOME:-$HOME/.agents}
+UNATTENDED=${UNATTENDED:-no}
+KEEP_EXISTING=${KEEP_EXISTING:-no}
+RUN_VALIDATION=${RUN_VALIDATION:-yes}
+FORCE_INSTALL=no
+
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+if [ -t 1 ]; then
+  is_tty() { true; }
+else
+  is_tty() { false; }
+fi
+
+setup_colors() {
+  if is_tty; then
+    FMT_RED=$(printf '\033[31m')
+    FMT_GREEN=$(printf '\033[32m')
+    FMT_YELLOW=$(printf '\033[33m')
+    FMT_BLUE=$(printf '\033[34m')
+    FMT_BOLD=$(printf '\033[1m')
+    FMT_RESET=$(printf '\033[0m')
+  else
+    FMT_RED=''
+    FMT_GREEN=''
+    FMT_YELLOW=''
+    FMT_BLUE=''
+    FMT_BOLD=''
+    FMT_RESET=''
+  fi
+}
 
 info() {
-  printf '\033[1;34mℹ\033[0m %s\n' "$*"
+  printf '%s%sℹ%s %s\n' "$FMT_BOLD" "$FMT_BLUE" "$FMT_RESET" "$*"
 }
 
 success() {
-  printf '\033[1;32m✔\033[0m %s\n' "$*"
+  printf '%s%s✔%s %s\n' "$FMT_BOLD" "$FMT_GREEN" "$FMT_RESET" "$*"
 }
 
 warning() {
-  printf '\033[1;33m⚠\033[0m %s\n' "$*"
+  printf '%s%s⚠%s %s\n' "$FMT_BOLD" "$FMT_YELLOW" "$FMT_RESET" "$*"
+}
+
+error() {
+  printf '%s%s✘ Error:%s %s\n' "$FMT_BOLD" "$FMT_RED" "$FMT_RESET" "$*" >&2
 }
 
 die() {
-  printf '\033[1;31m✘ Erro:\033[0m %s\n' "$*" >&2
+  error "$*"
   exit 1
 }
 
@@ -28,213 +102,273 @@ usage() {
 
 🧩 Codex Skills Installer
 
-Uso remoto recomendado:
+Uso remoto:
 
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- <skill>
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" <skill>
 
-  sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- <skill>
+  sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" <skill>
 
-Uso:
+Uso local:
 
-  install.sh <skill> [windows|linux|mac]
+  sh install.sh <skill> [opções]
 
-Exemplos:
+Exemplo:
 
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- react-product-builder
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" react-product-builder
 
-  sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- react-product-builder
+Opções:
 
-  ./install.sh react-product-builder linux
+  --unattended       Instala sem perguntas interativas
+  --keep-existing    Mantém a instalação atual
+  --force            Substitui a instalação atual e cria backup
+  --branch <ref>     Usa outra branch ou tag
+  --help              Exibe esta ajuda
 
-O sistema operacional é detectado automaticamente. O segundo argumento é opcional e serve apenas para sobrescrever a detecção.
+Variáveis:
 
-Variáveis opcionais:
-
-  CODEX_SKILLS_REPO_OWNER
-  CODEX_SKILLS_REPO_NAME
-  CODEX_SKILLS_REPO_REF
+  REPO
+  REMOTE
+  BRANCH
   CODEX_HOME
   AGENTS_HOME
+  SKILL
+  UNATTENDED
+  KEEP_EXISTING
+  RUN_VALIDATION
 
 EOF
 }
 
-command_exists() {
-  command -v "$1" >/dev/null 2>&1
-}
-
-normalize_os() {
-  value=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
-
-  case "$value" in
-    linux|wsl) printf '%s\n' linux ;;
-    mac|macos|darwin|osx) printf '%s\n' mac ;;
-    windows|win|win32|mingw|msys|cygwin) printf '%s\n' windows ;;
-    *) return 1 ;;
-  esac
-}
-
-detect_os() {
-  uname_value=$(uname -s 2>/dev/null || printf 'unknown')
-
-  case "$uname_value" in
-    Linux*)
-      if grep -qi microsoft /proc/version 2>/dev/null; then
-        printf '%s\n' linux
-      else
-        printf '%s\n' linux
-      fi
-      ;;
-    Darwin*) printf '%s\n' mac ;;
-    MINGW*|MSYS*|CYGWIN*) printf '%s\n' windows ;;
-    *) die "Não foi possível detectar o sistema operacional: $uname_value" ;;
-  esac
-}
-
-resolve_home() {
-  target_os="$1"
-
-  if [ "$target_os" = "windows" ]; then
-    if [ -n "${USERPROFILE:-}" ]; then
-      printf '%s\n' "$USERPROFILE"
-      return
-    fi
-
-    if command_exists cmd.exe; then
-      windows_home=$(cmd.exe /C "echo %USERPROFILE%" 2>/dev/null | tr -d '\r')
-      [ -n "$windows_home" ] || die "Não foi possível determinar USERPROFILE."
-
-      if command_exists cygpath; then
-        cygpath -u "$windows_home"
-      elif command_exists wslpath; then
-        wslpath "$windows_home"
-      else
-        printf '%s\n' "$windows_home"
-      fi
-      return
-    fi
+cleanup() {
+  if [ -n "${TMP_DIR:-}" ] && [ -d "$TMP_DIR" ]; then
+    rm -rf "$TMP_DIR"
   fi
-
-  [ -n "${HOME:-}" ] || die "A variável HOME não está definida."
-  printf '%s\n' "$HOME"
 }
 
-download_archive() {
-  output="$1"
+clone_repository() {
+  destination=$1
 
-  if command_exists curl; then
-    curl -fsSL "$ARCHIVE_URL" -o "$output"
-  elif command_exists wget; then
-    wget -qO "$output" "$ARCHIVE_URL"
-  else
-    die "Instale curl ou wget para continuar."
-  fi
+  command_exists git || die "git não está instalado."
+
+  info "Baixando catálogo de skills..."
+
+  umask g-w,o-w
+
+  git init --quiet "$destination"
+  (
+    cd "$destination"
+    git config core.eol lf
+    git config core.autocrlf false
+    git remote add origin "$REMOTE"
+    git fetch --quiet --depth=1 origin "$BRANCH"
+    git checkout --quiet -b "$BRANCH" "origin/$BRANCH"
+  ) || {
+    rm -rf "$destination"
+    die "Não foi possível baixar $REMOTE na referência $BRANCH."
+  }
 }
 
 list_skills() {
-  skills_dir="$1"
+  skills_root=$1
 
-  [ -d "$skills_dir" ] || return 0
+  printf '\nSkills disponíveis:\n\n'
+  for skill_path in "$skills_root"/*; do
+    [ -d "$skill_path" ] || continue
+    printf '  • %s\n' "$(basename "$skill_path")"
+  done
+  printf '\n'
+}
 
-  for directory in "$skills_dir"/*; do
-    [ -d "$directory" ] || continue
-    printf '  • %s\n' "$(basename "$directory")" >&2
+backup_existing_skill() {
+  target=$1
+
+  timestamp=$(date +%Y-%m-%d_%H-%M-%S)
+  backup="${target}.pre-codex-skills-${timestamp}"
+
+  warning "Instalação existente encontrada."
+  info "Criando backup em $backup"
+  mv "$target" "$backup"
+}
+
+backup_existing_agent() {
+  target=$1
+
+  [ -e "$target" ] || return 0
+
+  timestamp=$(date +%Y-%m-%d_%H-%M-%S)
+  backup="${target}.pre-codex-skills-${timestamp}"
+  mv "$target" "$backup"
+  warning "Agente existente movido para $backup"
+}
+
+install_skill() {
+  source=$1
+  target=$2
+
+  if [ -d "$target" ]; then
+    if [ "$KEEP_EXISTING" = yes ]; then
+      warning "A skill já está instalada em $target."
+      info "Nenhum arquivo foi alterado."
+      exit 0
+    fi
+
+    if [ "$FORCE_INSTALL" != yes ] && [ "$UNATTENDED" != yes ] && [ -t 0 ]; then
+      printf '%sA skill já existe. Substituir e criar backup? [Y/n]%s ' "$FMT_YELLOW" "$FMT_RESET"
+      read -r answer
+      case "$answer" in
+        [Nn]*) info "Instalação cancelada."; exit 0 ;;
+        [Yy]*|'') ;;
+        *) info "Resposta inválida. Instalação cancelada."; exit 0 ;;
+      esac
+    fi
+
+    backup_existing_skill "$target"
+  fi
+
+  mkdir -p "$(dirname "$target")"
+  cp -R "$source" "$target"
+}
+
+install_agents() {
+  source=$1
+  target=$2
+
+  [ -d "$source" ] || return 0
+
+  mkdir -p "$target"
+
+  for agent in "$source"/*.toml; do
+    [ -f "$agent" ] || continue
+    destination="$target/$(basename "$agent")"
+    backup_existing_agent "$destination"
+    cp "$agent" "$destination"
   done
 }
 
-SKILL_NAME="${1:-}"
-REQUESTED_OS="${2:-}"
+make_scripts_executable() {
+  scripts_dir=$1
 
-case "$SKILL_NAME" in
-  ""|help|-h|--help)
+  [ -d "$scripts_dir" ] || return 0
+
+  for script in "$scripts_dir"/*.sh; do
+    [ -f "$script" ] || continue
+    chmod +x "$script"
+  done
+}
+
+run_validation() {
+  skill_dir=$1
+  validator="$skill_dir/scripts/validate-skill.sh"
+
+  [ "$RUN_VALIDATION" = yes ] || return 0
+  [ -x "$validator" ] || return 0
+
+  info "Validando a skill instalada..."
+  "$validator"
+}
+
+print_success() {
+  skill_name=$1
+  skill_target=$2
+
+  printf '\n'
+  printf '%s%s' "$FMT_GREEN" "$FMT_BOLD"
+  printf '   ____          __          _____ __   _ ____    \n'
+  printf '  / ___|___   __| | _____  _/ ___// /__(_) / /____\n'
+  printf ' | |   / _ \\ / _` |/ _ \\ \\__ \\/ //_/ / / / ___/\n'
+  printf ' | |__| (_) | (_| |  __/ /__/ / ,< / / / (__  ) \n'
+  printf '  \\____\\___/ \\__,_|\\___| /____/_/|_/_/_/_/____/  \n'
+  printf '%s\n' "$FMT_RESET"
+
+  success "Skill instalada com sucesso."
+  printf '\n'
+  printf '  Skill:   %s\n' "$skill_name"
+  printf '  Destino: %s\n' "$skill_target"
+  printf '  Branch:  %s\n' "$BRANCH"
+  printf '\n'
+  info "Reinicie o Codex CLI para recarregar as skills."
+  printf '\n'
+  printf '  $%s help\n' "$skill_name"
+  printf '\n'
+}
+
+main() {
+  setup_colors
+
+  if [ ! -t 0 ]; then
+    UNATTENDED=yes
+  fi
+
+  skill_name=${SKILL:-}
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --unattended)
+        UNATTENDED=yes
+        ;;
+      --keep-existing)
+        KEEP_EXISTING=yes
+        ;;
+      --force)
+        FORCE_INSTALL=yes
+        ;;
+      --branch)
+        shift
+        [ $# -gt 0 ] || die "Informe uma referência após --branch."
+        BRANCH=$1
+        ;;
+      --help|-h)
+        usage
+        exit 0
+        ;;
+      --*)
+        usage
+        die "Opção desconhecida: $1"
+        ;;
+      *)
+        if [ -z "$skill_name" ]; then
+          skill_name=$1
+        else
+          die "Argumento inesperado: $1"
+        fi
+        ;;
+    esac
+    shift
+  done
+
+  if [ -z "$skill_name" ]; then
     usage
-    exit 0
-    ;;
-  *[!a-zA-Z0-9._-]*)
-    die "Nome da skill inválido: $SKILL_NAME"
-    ;;
-esac
+    exit 1
+  fi
 
-if [ -n "$REQUESTED_OS" ]; then
-  TARGET_OS=$(normalize_os "$REQUESTED_OS") || die "Sistema inválido: $REQUESTED_OS"
-else
-  TARGET_OS=$(detect_os)
-fi
+  case "$skill_name" in
+    *[!a-zA-Z0-9._-]*) die "Nome de skill inválido: $skill_name" ;;
+  esac
 
-USER_HOME=$(resolve_home "$TARGET_OS")
-CODEX_HOME="${CODEX_HOME:-${USER_HOME}/.codex}"
-AGENTS_HOME="${AGENTS_HOME:-${USER_HOME}/.agents}"
-SKILL_TARGET="${AGENTS_HOME}/skills/${SKILL_NAME}"
-CODEX_AGENTS_TARGET="${CODEX_HOME}/agents"
+  TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t codex-skills)
+  trap cleanup EXIT INT TERM
 
-TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t codex-skills)
-trap 'rm -rf "$TMP_DIR"' EXIT HUP INT TERM
+  repository="$TMP_DIR/repository"
+  clone_repository "$repository"
 
-ARCHIVE_PATH="${TMP_DIR}/repository.tar.gz"
-REPOSITORY_DIR="${TMP_DIR}/repository"
+  skills_root="$repository/skills"
+  skill_source="$skills_root/$skill_name"
 
-printf '\n🧩 \033[1mCodex Skills\033[0m\n\n'
-info "Skill: ${SKILL_NAME}"
-info "Sistema detectado: ${TARGET_OS}"
-info "Baixando ${REPO_OWNER}/${REPO_NAME}@${REPO_REF}..."
+  if [ ! -d "$skill_source" ]; then
+    list_skills "$skills_root"
+    die "Skill não encontrada: $skill_name"
+  fi
 
-download_archive "$ARCHIVE_PATH"
-mkdir -p "$REPOSITORY_DIR"
-tar -xzf "$ARCHIVE_PATH" -C "$REPOSITORY_DIR" --strip-components=1
+  [ -f "$skill_source/SKILL.md" ] || die "A skill não contém SKILL.md."
 
-SKILL_SOURCE="${REPOSITORY_DIR}/skills/${SKILL_NAME}"
+  skill_target="$AGENTS_HOME/skills/$skill_name"
+  agents_target="$CODEX_HOME/agents"
 
-if [ ! -d "$SKILL_SOURCE" ]; then
-  printf '\nSkills disponíveis:\n' >&2
-  list_skills "${REPOSITORY_DIR}/skills"
-  printf '\n' >&2
-  die "Skill não encontrada: $SKILL_NAME"
-fi
+  install_skill "$skill_source" "$skill_target"
+  install_agents "$skill_source/agents" "$agents_target"
+  make_scripts_executable "$skill_target/scripts"
+  run_validation "$skill_target"
+  print_success "$skill_name" "$skill_target"
+}
 
-[ -f "${SKILL_SOURCE}/SKILL.md" ] || die "A skill não contém SKILL.md."
-
-mkdir -p "${AGENTS_HOME}/skills" "$CODEX_AGENTS_TARGET"
-
-if [ -d "$SKILL_TARGET" ]; then
-  BACKUP="${SKILL_TARGET}.backup.$(date +%Y%m%d%H%M%S)"
-  warning "Instalação existente encontrada."
-  info "Criando backup em: $BACKUP"
-  mv "$SKILL_TARGET" "$BACKUP"
-fi
-
-cp -R "$SKILL_SOURCE" "$SKILL_TARGET"
-
-if [ -d "${SKILL_SOURCE}/agents" ]; then
-  for agent_file in "${SKILL_SOURCE}/agents"/*.toml; do
-    [ -f "$agent_file" ] || continue
-    cp "$agent_file" "$CODEX_AGENTS_TARGET/"
-  done
-fi
-
-if [ -d "${SKILL_TARGET}/scripts" ]; then
-  for script_file in "${SKILL_TARGET}/scripts"/*.sh; do
-    [ -f "$script_file" ] || continue
-    chmod +x "$script_file"
-  done
-fi
-
-if [ -x "${SKILL_TARGET}/scripts/validate-skill.sh" ]; then
-  info "Validando a skill..."
-  "${SKILL_TARGET}/scripts/validate-skill.sh"
-fi
-
-printf '\n'
-success "Skill instalada com sucesso."
-printf '\n'
-printf '  📦 Skill:    %s\n' "$SKILL_NAME"
-printf '  💻 Sistema: %s\n' "$TARGET_OS"
-printf '  📁 Destino: %s\n' "$SKILL_TARGET"
-
-if [ -d "${SKILL_SOURCE}/agents" ]; then
-  printf '  🤖 Agentes: %s\n' "$CODEX_AGENTS_TARGET"
-fi
-
-printf '\n'
-warning "Reinicie o Codex CLI para carregar a nova skill."
-printf '\nUse:\n\n'
-printf '  $%s help\n\n' "$SKILL_NAME"
+main "$@"
