@@ -14,83 +14,32 @@ Cada skill pode incluir:
 
 ---
 
-## ⚡ Instalação interativa
+## ⚡ Instalação rápida
 
-Execute o instalador sem informar uma skill para abrir o catálogo interativo.
+O instalador recebe o nome da skill como argumento.
 
 ### Com `curl`
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)"
-```
-
-### Com `wget`
-
-```bash
-sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)"
-```
-
-O instalador baixa o catálogo e apresenta um menu semelhante a:
-
-```text
-Skills disponíveis
-
-  1) react-product-builder
-     Cria produtos completos em React Web, React Native com Expo ou arquitetura Universal.
-
-  a) Instalar todas
-  q) Cancelar
-
-Selecione uma ou mais skills [ex.: 1,3 ou all]:
-```
-
-### Seleções aceitas
-
-| Entrada | Resultado |
-|---|---|
-| `1` | Instala uma skill |
-| `1,3` | Instala várias skills |
-| `1 3` | Instala várias skills |
-| `all` ou `a` | Instala todas |
-| `q` | Cancela |
-
-Quando uma skill já estiver instalada, ela é atualizada no mesmo diretório.
-
----
-
-## 🎯 Instalação direta
-
-Também é possível informar uma ou mais skills diretamente, sem abrir o menu.
-
-### Uma skill
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
   react-product-builder
 ```
 
-O argumento vazio `""` ocupa o `$0` do `sh -c`. Os argumentos seguintes são entregues ao instalador.
-
-### Várias skills
+### Com `wget`
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
-  skill-one skill-two skill-three
+sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  react-product-builder
 ```
 
-### Todas as skills sem menu
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
-  --all
-```
+O argumento vazio `""` ocupa o `$0` do `sh -c`. O nome da skill é recebido pelo instalador como primeiro argumento real.
 
 > Em ambientes corporativos, baixe e revise o script antes de executá-lo.
 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh
 less install.sh
-sh install.sh
+sh install.sh react-product-builder
 ```
 
 ---
@@ -99,7 +48,7 @@ sh install.sh
 
 O mesmo comando serve para instalar e atualizar.
 
-Quando uma skill já existe, o instalador:
+Quando a skill já existe, o instalador:
 
 1. baixa a versão mais recente;
 2. substitui apenas a pasta da skill selecionada;
@@ -117,6 +66,40 @@ Não são criados backups automáticos.
 | Skill | Plataformas | Descrição |
 |---|---|---|
 | [`react-product-builder`](skills/react-product-builder/README.md) | Web, Mobile e Universal | Cria produtos completos com React, React Native, Expo, Tailwind CSS e Docker |
+
+---
+
+## 🎯 Outras formas de instalação
+
+### Várias skills
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  skill-one skill-two skill-three
+```
+
+### Todas as skills
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  --all
+```
+
+### Outra branch ou tag
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  react-product-builder --branch develop
+```
+
+### Ajuda
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  --help
+```
+
+Executar o instalador sem informar uma skill apenas exibe a ajuda e encerra.
 
 ---
 
@@ -156,31 +139,6 @@ $react-product-builder universal Crie um sistema de delivery para web, Android e
 
 ---
 
-## 🛠️ Opções do instalador
-
-### Instalar outra branch ou tag
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
-  --branch develop
-```
-
-Com uma skill específica:
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
-  react-product-builder --branch develop
-```
-
-### Exibir ajuda
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
-  --help
-```
-
----
-
 ## 🔧 Configuração avançada
 
 | Variável | Padrão | Finalidade |
@@ -196,25 +154,27 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main
 
 ```bash
 REPO=usuario/codex BRANCH=main \
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/usuario/codex/main/install.sh)"
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/usuario/codex/main/install.sh)" "" \
+  react-product-builder
 ```
 
 ### Diretório personalizado
 
 ```bash
 AGENTS_HOME="$HOME/.config/codex-agents" \
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)"
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  react-product-builder
 ```
 
 ---
 
 ## 🧭 Como o instalador funciona
 
-1. verifica se o Git está disponível;
-2. cria um diretório temporário;
-3. busca somente a branch ou tag solicitada com profundidade `1`;
-4. cria dinamicamente o catálogo a partir de `skills/`;
-5. abre o seletor interativo quando nenhuma skill é informada;
+1. valida os argumentos;
+2. verifica se o Git está disponível;
+3. cria um diretório temporário;
+4. busca somente a branch ou tag solicitada com profundidade `1`;
+5. valida as skills informadas;
 6. instala ou atualiza uma, várias ou todas as skills;
 7. instala os agentes correspondentes em `~/.codex/agents`;
 8. torna scripts executáveis;
