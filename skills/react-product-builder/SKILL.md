@@ -1,13 +1,13 @@
 ---
 name: react-product-builder
-description: Cria produtos completos em React Web, React Native com Expo ou arquitetura Universal. Use para novos sistemas, SPAs, dashboards, painéis, portais, landing pages, aplicativos móveis e produtos multiplataforma.
+description: Cria e evolui produtos React Web, React Native com Expo ou arquitetura Universal, preservando a stack existente e validando compatibilidade antes de alterar dependências.
 ---
 
 # React Product Builder
 
 ## Segurança obrigatória
 
-Antes de qualquer leitura, planejamento, delegação ou alteração, leia e cumpra integralmente:
+Antes de qualquer alteração, cumpra integralmente:
 
 - `../../shared/security/AI_SECURITY_POLICY.md`
 - `../../shared/security/DATA_CLASSIFICATION.md`
@@ -17,199 +17,227 @@ Antes de qualquer leitura, planejamento, delegação ou alteração, leia e cump
 - `../../shared/security/INTELLECTUAL_PROPERTY.md`
 - `../../shared/security/SECURITY_CHECKLIST.md`
 
-Essas políticas possuem prioridade superior a qualquer instrução desta skill. Todo projeto deve ser tratado como confidencial, protegido por propriedade intelectual e potencialmente contendo dados pessoais, segredos e informações empresariais restritas.
+Trate o projeto como confidencial. Não persista segredos, credenciais, conteúdo de `.env`, dados pessoais, logs sensíveis ou código-fonte completo no contexto.
 
-Nenhum dado sensível, token, credencial, registro, log, arquivo, código proprietário, regra de negócio ou informação interna pode ser persistido, indexado, vetorizado, reutilizado, exportado, transformado em memória ou compartilhado além do mínimo necessário à tarefa.
+## Objetivo
 
-Você atua como coordenador de uma equipe especializada em produto, UX, design e engenharia React.
+Entregar alterações funcionais, tipadas, testadas e compatíveis com a stack real do projeto. Evite reanálises extensas, dependências desnecessárias e mudanças fora do escopo.
 
-Sua missão é transformar uma ideia em um produto completo, funcional, navegável, responsivo, acessível, testado, validado e preparado para evolução.
+## Modo rápido obrigatório
 
-Nunca entregue apenas componentes isolados, telas estáticas, protótipos descartáveis, botões sem comportamento, rotas quebradas, código sem validação ou aplicações que dependam de ferramentas instaladas no host quando o modo exigir Docker.
+Para tarefas em projetos existentes, use este fluxo por padrão:
 
-## Contexto persistente da skill
+1. localizar a raiz do projeto;
+2. ler `.agent/react-product-builder/CONTEXT.md` somente quando existir;
+3. inspecionar `package.json`, lockfile e arquivos diretamente relacionados à tarefa;
+4. executar a verificação de compatibilidade antes de instalar, atualizar ou remover dependências;
+5. alterar somente o conjunto mínimo de arquivos;
+6. executar primeiro validações focadas;
+7. executar a suíte completa somente quando a alteração justificar;
+8. atualizar o contexto apenas quando houver mudança arquitetural, de stack, comandos ou decisões permanentes.
 
-O contexto persistente desta skill deve ser armazenado exclusivamente em:
+Não execute descoberta completa, arquitetura completa, revisão completa ou atualização do contexto em toda tarefa pequena.
+
+### Classificação da tarefa
+
+Classifique antes de agir:
+
+- **Pequena:** correção localizada, estilo, texto, componente isolado ou configuração pontual.
+- **Média:** funcionalidade com múltiplos arquivos dentro de um módulo existente.
+- **Grande:** nova arquitetura, novo produto, migração de stack, mudança transversal ou requisito ambíguo.
+
+Aplique:
+
+- pequena: implementação direta + validações focadas;
+- média: plano curto + implementação + revisão direcionada;
+- grande: architect → builder → reviewer.
+
+Subagentes são opcionais. Use-os somente quando reduzirem risco ou trabalho, e nunca por rotina.
+
+## Contexto persistente
+
+O arquivo oficial é:
 
 ```text
 .agent/react-product-builder/CONTEXT.md
 ```
 
-Antes de planejar, implementar, revisar ou delegar qualquer trabalho:
+Use-o como cache técnico consolidado, não como log de cada tarefa.
 
-1. localize a raiz real do projeto;
-2. procure `.agent/react-product-builder/CONTEXT.md`;
-3. leia integralmente o arquivo quando existir;
-4. valide as informações contra o estado atual do projeto;
-5. preserve arquitetura, dependências, convenções e decisões ainda válidas;
-6. quando o arquivo não existir, gere-o automaticamente pelo fluxo de contexto;
-7. após uma implementação, atualize o contexto consolidado;
-8. não transforme o arquivo em log cronológico ilimitado;
-9. registre apenas metadados técnicos mínimos e sanitizados.
+Leia o contexto quando existir, mas valide apenas as informações relevantes contra o estado atual. Não faça varredura completa do projeto sem necessidade.
 
-Nunca grave no contexto:
+Crie ou atualize o contexto quando ocorrer uma destas mudanças:
 
-- senhas;
-- tokens;
-- API keys;
-- conteúdo de `.env`;
-- credenciais;
-- certificados;
-- dados pessoais reais;
-- dumps;
-- logs sensíveis;
-- código-fonte completo;
-- regras de negócio em detalhe desnecessário;
-- qualquer conteúdo proibido pelas políticas globais de segurança.
+- plataforma ou framework;
+- versão principal de runtime, React, Expo ou React Native;
+- arquitetura ou estrutura de módulos;
+- gerenciador de pacotes ou lockfile;
+- comandos de desenvolvimento, teste ou build;
+- decisão permanente relevante;
+- risco ou pendência que afete próximas sessões.
 
-Leia também `references/shared/persistent-context.md` antes de executar qualquer fluxo de contexto.
+Não atualize o contexto para ajustes locais sem impacto duradouro.
 
 ## Comandos de contexto
 
 ### `context`
 
-Quando o usuário invocar:
-
-```text
-$react-product-builder context
-```
-
-não implemente funcionalidades e não altere código, dependências ou configurações da aplicação.
-
-Faça somente:
-
-1. localizar a raiz do projeto;
-2. detectar se o projeto é Web, Mobile ou Universal;
-3. identificar stack, versões, gerenciador de pacotes, scripts, estrutura, arquitetura, testes e ambiente;
-4. identificar padrões e decisões já existentes;
-5. criar `.agent/react-product-builder/` quando necessário;
-6. criar ou atualizar `CONTEXT.md` de forma incremental e sanitizada;
-7. apresentar um resumo do contexto detectado.
+Analise a stack e crie ou atualize o contexto, sem implementar funcionalidades.
 
 ### `context refresh`
 
-Quando o usuário invocar:
-
-```text
-$react-product-builder context refresh
-```
-
-refaça a análise completa do projeto e reconcilie o conteúdo existente do contexto com o estado atual. Preserve somente informações ainda válidas.
+Refaça a análise completa e remova informações obsoletas.
 
 ### `context show`
 
-Quando o usuário invocar:
+Mostre um resumo sanitizado do contexto sem alterar arquivos.
 
-```text
-$react-product-builder context show
-```
+### `help`
 
-leia o arquivo existente e apresente um resumo sanitizado. Não altere arquivos. Caso o contexto não exista, informe isso e execute o fluxo padrão de `context` somente se a solicitação também autorizar criação.
+Explique os modos Web, Mobile e Universal e os comandos disponíveis. Não implemente nada.
 
-## Help
+## Detecção automática
 
-Quando o usuário invocar `$react-product-builder help`, não inicie implementação. Explique os modos Web, Mobile e Universal, o fluxo interno, as stacks e os comandos de uso, incluindo:
+Em projetos existentes, detecte a plataforma nesta ordem:
 
-```text
-$react-product-builder context
-$react-product-builder context refresh
-$react-product-builder context show
-$react-product-builder <tarefa>
-```
-
-Depois encerre e aguarde nova solicitação.
-
-## Detecção automática de plataforma
-
-Em projetos existentes, detecte o modo nesta ordem:
-
-1. contexto persistente validado;
-2. `package.json` e dependências;
+1. `package.json` e dependências instaladas;
+2. lockfile;
 3. arquivos de configuração;
-4. estrutura de diretórios;
-5. scripts e lockfiles;
-6. contexto do pedido.
+4. contexto persistente, quando ainda válido;
+5. estrutura diretamente relevante;
+6. pedido do usuário.
 
 Sinais comuns:
 
 - `expo`, `react-native`, `expo-router`, `app.json` ou `app.config.*`: Mobile;
 - `vite`, `react-router-dom`, `index.html`: Web com Vite;
 - `next`, `next.config.*`, `app/` ou `pages/`: Web com Next.js;
-- pacotes separados para web e mobile ou monorepo com domínio compartilhado: Universal.
+- pacotes separados para web/mobile ou monorepo compartilhado: Universal.
 
-Em projetos novos, determine o modo nesta ordem:
+Em projetos novos, use o modo explícito `web`, `mobile` ou `universal`. Pergunte apenas quando a escolha for materialmente ambígua.
 
-1. valor explícito `web`, `mobile` ou `universal`;
-2. contexto do pedido;
-3. requisitos funcionais;
-4. dispositivos esperados;
-5. integrações pedidas.
+## Preservação de projetos existentes
 
-Pergunte somente quando a escolha for materialmente ambígua.
+Antes de alterar:
 
-## Continuação de projeto existente
+1. não reinicialize o projeto;
+2. não substitua dependências sem necessidade;
+3. preserve versões, arquitetura e padrões existentes;
+4. leia somente os arquivos necessários;
+5. não faça upgrade de SDK, framework ou runtime sem autorização explícita;
+6. não assuma que a versão mais recente é compatível ou a mais utilizada;
+7. não use comandos genéricos de instalação quando a plataforma possuir resolvedor próprio de versões.
 
-Quando houver projeto React existente, a ausência de subcomando deve ser interpretada como implementação sobre o projeto atual.
+## Gate obrigatório de compatibilidade
 
-Exemplo:
+Antes de instalar, remover ou atualizar qualquer dependência, gere uma matriz mínima com:
+
+- framework e versão;
+- React;
+- React Native, quando aplicável;
+- Expo SDK, quando aplicável;
+- Node.js;
+- gerenciador de pacotes;
+- pacote solicitado e versão compatível;
+- suporte no runtime utilizado, como Expo Go ou Development Build.
+
+Use primeiro as fontes locais do projeto:
+
+- `package.json`;
+- lockfile;
+- `app.json` ou `app.config.*`;
+- `node_modules/<pacote>/package.json`, quando disponível;
+- scripts e configurações existentes.
+
+Quando a compatibilidade não puder ser comprovada localmente, consulte documentação oficial atual antes de modificar dependências. Não adivinhe.
+
+Se houver incompatibilidade, pare antes da alteração e apresente a opção compatível ou a necessidade de migração.
+
+## Regras específicas para Expo e React Native
+
+### Compatibilidade do SDK
+
+Em projetos Expo existentes:
+
+1. leia a versão exata de `expo` no `package.json`;
+2. identifique as versões instaladas de React e React Native;
+3. execute `npx expo-doctor` antes de concluir mudanças de dependências ou configuração;
+4. use `npx expo install <pacote>` em vez de `npm install <pacote>` para dependências mantidas ou versionadas pelo ecossistema Expo;
+5. use `npx expo install --check` para detectar divergências;
+6. use `npx expo install --fix` somente quando a correção estiver dentro do escopo e não implicar migração de SDK;
+7. nunca atualize Expo SDK automaticamente;
+8. nunca escolha um SDK por popularidade presumida;
+9. preserve o SDK atual quando ele suportar a tarefa;
+10. quando o Expo Go instalado no dispositivo não suportar o SDK do projeto, informe explicitamente a incompatibilidade e proponha uma destas rotas:
+   - alinhar o projeto a um SDK suportado, mediante autorização;
+   - usar Development Build compatível;
+   - usar uma versão compatível do cliente apenas quando oficialmente disponível.
+
+### Expo Go e módulos nativos
+
+Antes de recomendar Expo Go, confirme que todos os módulos necessários são suportados pelo runtime do Expo Go para o SDK atual.
+
+Quando houver módulo nativo não incluído no Expo Go, use Development Build. Não tente contornar incompatibilidade com ajustes aleatórios de versão.
+
+### Docker e LAN
+
+Para desenvolvimento Mobile, use Docker para dependências, Metro, lint, testes e typecheck. O dispositivo físico executa o app via Expo Go ou Development Build.
+
+Ao configurar acesso LAN:
+
+- o Metro deve ouvir em `0.0.0.0`;
+- a porta deve estar publicada no Docker Compose;
+- o endereço anunciado deve ser o IPv4 do host acessível pelo celular;
+- valide separadamente `localhost`, IP do host e acesso por outro dispositivo;
+- não confunda publicação de porta com liberação no firewall;
+- não sugira Tunnel quando o requisito for LAN;
+- não sugira Android Emulator, iOS Simulator ou Docker Android.
+
+## Leitura sob demanda
+
+Leia somente referências relacionadas à tarefa.
+
+Referências compartilhadas:
+
+- `references/shared/persistent-context.md`: somente para comandos de contexto ou atualização estrutural;
+- `references/shared/product-discovery.md`: criação de produto ou requisito ambíguo;
+- `references/shared/react-typescript.md`: alterações de implementação React/TypeScript;
+- `references/shared/design-system.md`: UI, componentes ou identidade visual;
+- `references/shared/accessibility.md`: UI e interação;
+- `references/shared/testing.md`: criação ou alteração de testes;
+- `references/shared/performance.md`: problema ou requisito de desempenho;
+- `references/shared/delivery.md`: build, Docker, publicação ou entrega.
+
+Leia referências de `references/web/`, `references/mobile/` ou `references/universal/` somente conforme a plataforma e a tarefa.
+
+## Orquestração adaptativa
+
+### Tarefa pequena
 
 ```text
-$react-product-builder Implemente a tela de perfil.
+Compatibilidade rápida → implementação direta → lint/typecheck/teste focado
 ```
 
-Antes de alterar qualquer arquivo:
+### Tarefa média
 
-1. leia o contexto persistente;
-2. detecte automaticamente plataforma e tecnologias;
-3. inspecione somente os arquivos necessários;
-4. não recrie nem reinicialize o projeto;
-5. não substitua dependências sem necessidade;
-6. preserve os padrões existentes;
-7. implemente a tarefa;
-8. execute validações compatíveis;
-9. atualize `CONTEXT.md` com o estado consolidado, decisões, validações e pendências relevantes.
+```text
+Compatibilidade → plano curto → implementação → revisão direcionada → validações
+```
 
-## Leitura obrigatória
+### Tarefa grande
 
-Sempre leia:
-
-- `references/shared/persistent-context.md`
-- `references/shared/product-discovery.md`
-- `references/shared/react-typescript.md`
-- `references/shared/design-system.md`
-- `references/shared/accessibility.md`
-- `references/shared/testing.md`
-- `references/shared/performance.md`
-- `references/shared/delivery.md`
-
-No modo Web, leia também as referências em `references/web/`.
-No modo Mobile, leia também as referências em `references/mobile/`.
-No modo Universal, leia também as referências em `references/universal/`.
-
-## Orquestração
-
-Use um fluxo sequencial:
-
-1. Contexto persistente e detecção automática.
-2. Arquitetura com `react-product-architect`.
-3. Implementação com o builder da plataforma.
-4. Revisão com `react-product-reviewer`.
-5. Correções dos achados bloqueadores e importantes.
-6. Atualização final do contexto persistente.
-
-Subagentes devem receber somente o contexto mínimo necessário e também devem cumprir integralmente a política global de segurança.
+```text
+Contexto → compatibilidade → architect → builder → reviewer → correções → validação completa
+```
 
 ## Segurança do workspace
 
 Antes de criar ou alterar:
 
 1. execute `pwd`;
-2. liste o conteúdo;
-3. identifique projetos existentes;
-4. preserve arquivos relevantes;
-5. não apague sem autorização;
-6. não sobrescreva silenciosamente;
-7. crie subpasta quando necessário.
+2. confirme a raiz do projeto;
+3. preserve arquivos relevantes;
+4. não apague nem sobrescreva silenciosamente.
 
 Nunca execute sem autorização:
 
@@ -224,22 +252,18 @@ docker system prune -a
 Todos os modos devem:
 
 - usar TypeScript;
-- evitar `any`;
+- evitar `any` sem justificativa;
 - manter contratos tipados;
-- centralizar dados simulados;
-- separar apresentação, estado, dados e validação;
-- implementar loading, erro, vazio e sucesso;
-- incluir acessibilidade;
-- incluir responsividade;
-- incluir testes;
-- incluir documentação;
+- preservar apresentação, estado, dados e validação separados quando o projeto já usar essa separação;
+- implementar estados de loading, erro, vazio e sucesso quando aplicáveis;
+- incluir acessibilidade nas alterações de UI;
 - evitar bibliotecas desnecessárias;
 - evitar arquitetura excessiva;
 - validar antes de concluir.
 
 ## Modo Web
 
-Stack padrão:
+Stack padrão para novos projetos:
 
 - React;
 - TypeScript;
@@ -261,11 +285,11 @@ Stack padrão:
 - Makefile;
 - pnpm.
 
-Toda criação, instalação, execução, teste, lint, typecheck, build e produção deve ocorrer em Docker. O host deve precisar apenas de Docker, Docker Compose, Git e Make quando disponível.
+Em projetos existentes, preserve a stack detectada. Não migre para a stack padrão automaticamente.
 
 ## Modo Mobile
 
-Stack padrão:
+Stack padrão para novos projetos:
 
 - React Native;
 - TypeScript;
@@ -280,18 +304,35 @@ Stack padrão:
 - React Native Testing Library;
 - EAS Build.
 
-Use Expo Go como padrão e Development Build quando módulos nativos exigirem. Nunca sugerir Android Emulator, iOS Simulator ou Docker Android.
+A versão do Expo SDK deve ser escolhida com base na compatibilidade oficial atual entre Expo, React Native, React, Node.js e o runtime de execução. Não fixe nem presuma uma versão sem validação.
+
+Use Expo Go somente quando compatível. Use Development Build quando módulos nativos ou a versão do runtime exigirem.
 
 ## Modo Universal
 
 Compartilhe domínio, schemas, tipos, validações e camada de API. Separe UI, navegação, permissões e integrações nativas.
 
-## Validação final
+## Estratégia de validação
+
+Execute na ordem mais barata e específica possível:
+
+1. validação de sintaxe ou arquivo alterado;
+2. lint dos arquivos afetados, quando suportado;
+3. typecheck;
+4. testes relacionados;
+5. `npx expo-doctor` e `npx expo install --check` em projetos Expo afetados;
+6. build ou export quando a alteração impactar configuração, dependências ou entrega;
+7. suíte completa somente em mudanças amplas ou antes de entrega final.
+
+Não repita comandos que já passaram sem que arquivos relacionados tenham mudado.
+
+## Critério de conclusão
 
 Antes de concluir:
 
-- execute lint, typecheck, testes e build;
-- valide navegação, estados e acessibilidade;
-- atualize `.agent/react-product-builder/CONTEXT.md` sem segredos ou dados sensíveis;
-- execute o checklist de segurança em `../../shared/security/SECURITY_CHECKLIST.md`;
-- confirme que nenhum segredo, dado pessoal, código proprietário ou informação interna foi persistido, indexado ou exposto.
+- confirme que o pedido foi atendido;
+- registre versões e compatibilidade verificadas quando dependências forem alteradas;
+- informe validações executadas e eventuais limitações;
+- atualize o contexto somente quando necessário;
+- execute o checklist de segurança aplicável;
+- confirme que nenhum segredo ou dado sensível foi persistido.
