@@ -1,5 +1,6 @@
 ---
 name: react-product-builder
+version: 1.1.0
 description: Cria e evolui produtos React Web, React Native com Expo ou arquitetura Universal, preservando a stack existente e validando compatibilidade antes de alterar dependências.
 ---
 
@@ -95,6 +96,34 @@ Mostre um resumo sanitizado do contexto sem alterar arquivos.
 ### `help`
 
 Explique os modos Web, Mobile e Universal e os comandos disponíveis. Não implemente nada.
+
+### `version` e `--version`
+
+Quando o usuário invocar:
+
+```text
+$react-product-builder version
+$react-product-builder --version
+```
+
+não analise o projeto e não altere arquivos.
+
+Leia a versão registrada em `VERSION` e apresente somente:
+
+- nome da skill;
+- versão instalada;
+- origem `fabiocantarelli/codex`;
+- resumo curto das capacidades principais.
+
+Formato esperado:
+
+```text
+React Product Builder v1.1.0
+Origem: fabiocantarelli/codex
+Recursos: React Web, React Native, Expo, Universal, validação de compatibilidade e fluxo rápido adaptativo.
+```
+
+O arquivo `VERSION` é a fonte oficial da versão. O campo `version` do frontmatter deve permanecer sincronizado com ele.
 
 ## Detecção automática
 
