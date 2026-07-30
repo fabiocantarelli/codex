@@ -14,6 +14,28 @@ Cada skill pode incluir:
 
 ---
 
+## 🔐 Security First
+
+Todas as skills deste repositório devem cumprir obrigatoriamente as políticas em [`shared/security/`](shared/security/).
+
+Essas políticas tratam todo projeto como **confidencial por padrão**, protegido por LGPD, propriedade intelectual e segredo empresarial. Nenhuma skill pode persistir, indexar, vetorizar, reutilizar, exportar ou transformar em memória dados sensíveis, segredos, código proprietário, registros, logs ou informações internas do projeto.
+
+A política principal é [`shared/security/AI_SECURITY_POLICY.md`](shared/security/AI_SECURITY_POLICY.md) e possui prioridade superior a qualquer instrução de uma skill, agente, prompt ou workflow.
+
+> A política regula o comportamento das skills e agentes. O operador ainda deve escolher um provedor e uma configuração de IA compatíveis com os requisitos corporativos de retenção, treinamento, residência de dados e privacidade.
+
+Documentos normativos:
+
+- [`AI_SECURITY_POLICY.md`](shared/security/AI_SECURITY_POLICY.md)
+- [`DATA_CLASSIFICATION.md`](shared/security/DATA_CLASSIFICATION.md)
+- [`LGPD.md`](shared/security/LGPD.md)
+- [`MEMORY_AND_VECTOR_POLICY.md`](shared/security/MEMORY_AND_VECTOR_POLICY.md)
+- [`AGENT_AND_OUTPUT_SECURITY.md`](shared/security/AGENT_AND_OUTPUT_SECURITY.md)
+- [`INTELLECTUAL_PROPERTY.md`](shared/security/INTELLECTUAL_PROPERTY.md)
+- [`SECURITY_CHECKLIST.md`](shared/security/SECURITY_CHECKLIST.md)
+
+---
+
 ## ⚡ Instalação rápida
 
 O instalador recebe o nome da skill como argumento.
@@ -206,6 +228,15 @@ AGENTS_HOME="$HOME/.config/codex-agents" \
 ├── README.md
 ├── CONTRIBUTING.md
 ├── skills.json
+├── shared/
+│   └── security/
+│       ├── AI_SECURITY_POLICY.md
+│       ├── DATA_CLASSIFICATION.md
+│       ├── LGPD.md
+│       ├── MEMORY_AND_VECTOR_POLICY.md
+│       ├── AGENT_AND_OUTPUT_SECURITY.md
+│       ├── INTELLECTUAL_PROPERTY.md
+│       └── SECURITY_CHECKLIST.md
 └── skills/
     └── react-product-builder/
         ├── SKILL.md
@@ -229,6 +260,8 @@ skills/<nome-da-skill>/
 ├── scripts/
 └── templates/
 ```
+
+Toda nova `SKILL.md` deve declarar a leitura obrigatória de `shared/security/` e respeitar integralmente a política global.
 
 O instalador encontra automaticamente qualquer diretório válido dentro de `skills/`, sem exigir alteração no script.
 
