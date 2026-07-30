@@ -11,7 +11,6 @@ BRANCH=${BRANCH:-main}
 CODEX_HOME=${CODEX_HOME:-$HOME/.codex}
 AGENTS_HOME=${AGENTS_HOME:-$HOME/.agents}
 RUN_VALIDATION=${RUN_VALIDATION:-yes}
-SELECTED_SKILLS=''
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
 
@@ -21,11 +20,10 @@ setup_colors() {
     FMT_GREEN=$(printf '\033[32m')
     FMT_YELLOW=$(printf '\033[33m')
     FMT_BLUE=$(printf '\033[34m')
-    FMT_CYAN=$(printf '\033[36m')
     FMT_BOLD=$(printf '\033[1m')
     FMT_RESET=$(printf '\033[0m')
   else
-    FMT_RED=''; FMT_GREEN=''; FMT_YELLOW=''; FMT_BLUE=''; FMT_CYAN=''; FMT_BOLD=''; FMT_RESET=''
+    FMT_RED=''; FMT_GREEN=''; FMT_YELLOW=''; FMT_BLUE=''; FMT_BOLD=''; FMT_RESET=''
   fi
 }
 
@@ -40,19 +38,31 @@ usage() {
 
 🧩 Codex Skills Installer
 
-Menu interativo:
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)"
+Instalar ou atualizar uma skill:
 
-Instalação direta:
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" <skill>
 
+  sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" <skill>
+
+Instalar várias skills:
+
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" <skill-1> <skill-2>
+
 Instalar todas:
+
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" --all
 
+Uso local:
+
+  sh install.sh <skill> [skill ...] [opções]
+
 Opções:
-  --all
-  --branch <ref>
-  --help
+
+  --all              Instala todas as skills disponíveis
+  --branch <ref>     Usa outra branch ou tag
+  --help             Exibe esta ajuda
+
+Ao executar novamente, skills e agentes existentes são atualizados diretamente.
 EOF
 }
 
@@ -79,88 +89,12 @@ clone_repository() {
   }
 }
 
-skill_description() {
-  file="$1/SKILL.md"
-  [ -f "$file" ] && sed -n 's/^description:[[:space:]]*//p' "$file" | head -n 1
-}
-
-build_skill_index() {
+all_skill_names() {
   root=$1
-  index=$2
-  number=0
-  : > "$index"
   for path in "$root"/*; do
     [ -d "$path" ] || continue
     [ -f "$path/SKILL.md" ] || continue
-    number=$((number + 1))
-    printf '%s|%s\n' "$number" "$(basename "$path")" >> "$index"
-  done
-  [ "$number" -gt 0 ] || die "Nenhuma skill foi encontrada no repositório."
-}
-
-all_skill_names() {
-  cut -d'|' -f2 "$1" | tr '\n' ' '
-}
-
-print_skill_menu() {
-  root=$1
-  index=$2
-  printf '\n%s%sSkills disponíveis%s\n\n' "$FMT_BOLD" "$FMT_CYAN" "$FMT_RESET"
-  while IFS='|' read -r number name; do
-    description=$(skill_description "$root/$name")
-    printf '  %s%s)%s %s%s%s\n' "$FMT_BOLD" "$number" "$FMT_RESET" "$FMT_BOLD" "$name" "$FMT_RESET"
-    [ -n "$description" ] && printf '     %s\n' "$description"
-    printf '\n'
-  done < "$index"
-  printf '  %sa)%s Instalar todas\n' "$FMT_BOLD" "$FMT_RESET"
-  printf '  %sq)%s Cancelar\n\n' "$FMT_BOLD" "$FMT_RESET"
-  printf 'Selecione uma ou mais skills [ex.: 1,3 ou all]: '
-}
-
-resolve_selection() {
-  selection=$1
-  index=$2
-  result=''
-  normalized=$(printf '%s' "$selection" | tr ',;' '  ')
-
-  case "$normalized" in
-    q|Q|quit|exit) return 2 ;;
-    a|A|all|ALL|'*') SELECTED_SKILLS=$(all_skill_names "$index"); return 0 ;;
-  esac
-
-  for token in $normalized; do
-    case "$token" in *[!0-9]*|'') return 1 ;; esac
-    name=$(awk -F'|' -v n="$token" '$1 == n { print $2; exit }' "$index")
-    [ -n "$name" ] || return 1
-    case " $result " in *" $name "*) ;; *) result="$result $name" ;; esac
-  done
-
-  result=$(printf '%s' "$result" | sed 's/^ *//;s/ *$//')
-  [ -n "$result" ] || return 1
-  SELECTED_SKILLS=$result
-  return 0
-}
-
-select_skills_interactively() {
-  root=$1
-  index=$2
-  [ -r /dev/tty ] && [ -w /dev/tty ] || die "Não há terminal interativo disponível."
-
-  while :; do
-    print_skill_menu "$root" "$index" > /dev/tty
-    IFS= read -r answer < /dev/tty || exit 1
-
-    if resolve_selection "$answer" "$index"; then
-      return 0
-    fi
-
-    status=$?
-    if [ "$status" -eq 2 ]; then
-      info "Instalação cancelada."
-      exit 0
-    fi
-
-    warning "Seleção inválida. Informe números separados por vírgula ou use 'all'."
+    printf '%s ' "$(basename "$path")"
   done
 }
 
@@ -254,32 +188,29 @@ main() {
     shift
   done
 
+  requested=$(printf '%s' "$requested" | sed 's/^ *//;s/ *$//')
+  if [ "$install_all" != yes ] && [ -z "$requested" ]; then
+    usage
+    exit 1
+  fi
+
   TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t codex-skills)
   trap cleanup EXIT INT TERM
 
   repository="$TMP_DIR/repository"
   clone_repository "$repository"
-
   skills_root="$repository/skills"
-  index_file="$TMP_DIR/skills.index"
-  build_skill_index "$skills_root" "$index_file"
 
   if [ "$install_all" = yes ]; then
-    requested=$(all_skill_names "$index_file")
-  else
+    requested=$(all_skill_names "$skills_root")
     requested=$(printf '%s' "$requested" | sed 's/^ *//;s/ *$//')
-  fi
-
-  if [ -z "$requested" ]; then
-    select_skills_interactively "$skills_root" "$index_file"
-    requested=$SELECTED_SKILLS
   fi
 
   installed=''
   for name in $requested; do
     source="$skills_root/$name"
-    if [ ! -d "$source" ]; then warning "Skill não encontrada e ignorada: $name"; continue; fi
-    if [ ! -f "$source/SKILL.md" ]; then warning "Skill inválida e ignorada: $name"; continue; fi
+    [ -d "$source" ] || { warning "Skill não encontrada e ignorada: $name"; continue; }
+    [ -f "$source/SKILL.md" ] || { warning "Skill inválida e ignorada: $name"; continue; }
 
     target="$AGENTS_HOME/skills/$name"
     install_skill "$source" "$target"
