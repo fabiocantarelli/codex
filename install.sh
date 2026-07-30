@@ -2,11 +2,11 @@
 #
 # Codex Skills Installer
 #
-# curl:
-#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" react-product-builder
+# Menu interativo:
+#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)"
 #
-# wget:
-#   sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" react-product-builder
+# Instalação direta:
+#   sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" react-product-builder
 #
 
 set -e
@@ -38,6 +38,7 @@ setup_colors() {
     FMT_GREEN=$(printf '\033[32m')
     FMT_YELLOW=$(printf '\033[33m')
     FMT_BLUE=$(printf '\033[34m')
+    FMT_CYAN=$(printf '\033[36m')
     FMT_BOLD=$(printf '\033[1m')
     FMT_RESET=$(printf '\033[0m')
   else
@@ -45,6 +46,7 @@ setup_colors() {
     FMT_GREEN=''
     FMT_YELLOW=''
     FMT_BLUE=''
+    FMT_CYAN=''
     FMT_BOLD=''
     FMT_RESET=''
   fi
@@ -76,25 +78,39 @@ usage() {
 
 🧩 Codex Skills Installer
 
-Uso remoto:
+Menu interativo:
+
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)"
+
+  sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)"
+
+Instalação direta:
 
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" <skill>
 
-  sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" <skill>
+Instalar todas sem menu:
+
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" --all
 
 Uso local:
 
-  sh install.sh <skill> [opções]
+  sh install.sh [skill ...] [opções]
 
 Opções:
 
+  --all              Instala todas as skills disponíveis
   --branch <ref>     Usa outra branch ou tag
   --help             Exibe esta ajuda
 
-Comportamento:
+No menu interativo, informe:
 
-  Se a skill já estiver instalada, ela será atualizada no mesmo diretório.
-  Os agentes existentes com o mesmo nome também serão substituídos.
+  1                 Uma skill
+  1,3               Várias skills
+  1 3               Várias skills
+  all               Todas as skills
+  q                 Cancelar
+
+Se uma skill já estiver instalada, ela será atualizada no mesmo diretório.
 
 EOF
 }
@@ -127,15 +143,122 @@ clone_repository() {
   }
 }
 
-list_skills() {
-  ls_skills_root=$1
+skill_description() {
+  sd_skill_dir=$1
+  sd_skill_file="$sd_skill_dir/SKILL.md"
 
-  printf '\nSkills disponíveis:\n\n'
-  for ls_skill_path in "$ls_skills_root"/*; do
-    [ -d "$ls_skill_path" ] || continue
-    printf '  • %s\n' "$(basename "$ls_skill_path")"
+  if [ -f "$sd_skill_file" ]; then
+    sed -n 's/^description:[[:space:]]*//p' "$sd_skill_file" | head -n 1
+  fi
+}
+
+build_skill_index() {
+  bsi_skills_root=$1
+  bsi_index_file=$2
+  bsi_number=0
+
+  : > "$bsi_index_file"
+
+  for bsi_skill_path in "$bsi_skills_root"/*; do
+    [ -d "$bsi_skill_path" ] || continue
+    [ -f "$bsi_skill_path/SKILL.md" ] || continue
+    bsi_number=$((bsi_number + 1))
+    printf '%s|%s\n' "$bsi_number" "$(basename "$bsi_skill_path")" >> "$bsi_index_file"
   done
-  printf '\n'
+
+  [ "$bsi_number" -gt 0 ] || die "Nenhuma skill foi encontrada no repositório."
+}
+
+print_skill_menu() {
+  psm_skills_root=$1
+  psm_index_file=$2
+
+  printf '\n%s%sSkills disponíveis%s\n\n' "$FMT_BOLD" "$FMT_CYAN" "$FMT_RESET"
+
+  while IFS='|' read -r psm_number psm_name; do
+    psm_description=$(skill_description "$psm_skills_root/$psm_name")
+    printf '  %s%s)%s %s%s%s\n' \
+      "$FMT_BOLD" "$psm_number" "$FMT_RESET" \
+      "$FMT_BOLD" "$psm_name" "$FMT_RESET"
+    if [ -n "$psm_description" ]; then
+      printf '     %s\n' "$psm_description"
+    fi
+    printf '\n'
+  done < "$psm_index_file"
+
+  printf '  %sa)%s Instalar todas\n' "$FMT_BOLD" "$FMT_RESET"
+  printf '  %sq)%s Cancelar\n\n' "$FMT_BOLD" "$FMT_RESET"
+  printf 'Selecione uma ou mais skills [ex.: 1,3 ou all]: '
+}
+
+all_skill_names() {
+  asn_index_file=$1
+  cut -d'|' -f2 "$asn_index_file" | tr '\n' ' '
+}
+
+resolve_menu_selection() {
+  rms_selection=$1
+  rms_index_file=$2
+  rms_result=''
+
+  rms_normalized=$(printf '%s' "$rms_selection" | tr ',;' '  ')
+
+  case "$rms_normalized" in
+    q|Q|quit|exit)
+      return 2
+      ;;
+    a|A|all|ALL|'*')
+      all_skill_names "$rms_index_file"
+      return 0
+      ;;
+  esac
+
+  for rms_token in $rms_normalized; do
+    case "$rms_token" in
+      *[!0-9]*|'')
+        return 1
+        ;;
+    esac
+
+    rms_name=$(awk -F'|' -v number="$rms_token" '$1 == number { print $2; exit }' "$rms_index_file")
+    [ -n "$rms_name" ] || return 1
+
+    case " $rms_result " in
+      *" $rms_name "*) ;;
+      *) rms_result="$rms_result $rms_name" ;;
+    esac
+  done
+
+  rms_result=$(printf '%s' "$rms_result" | sed 's/^ *//;s/ *$//')
+  [ -n "$rms_result" ] || return 1
+  printf '%s\n' "$rms_result"
+}
+
+select_skills_interactively() {
+  ssi_skills_root=$1
+  ssi_index_file=$2
+
+  [ -t 0 ] || {
+    usage
+    die "Nenhuma skill foi informada e o terminal não é interativo."
+  }
+
+  while :; do
+    print_skill_menu "$ssi_skills_root" "$ssi_index_file"
+    IFS= read -r ssi_answer || exit 1
+
+    if ssi_result=$(resolve_menu_selection "$ssi_answer" "$ssi_index_file"); then
+      printf '%s\n' "$ssi_result"
+      return 0
+    else
+      ssi_status=$?
+      if [ "$ssi_status" -eq 2 ]; then
+        info "Instalação cancelada."
+        exit 0
+      fi
+      warning "Seleção inválida. Informe números separados por vírgula ou use 'all'."
+    fi
+  done
 }
 
 install_skill() {
@@ -145,10 +268,10 @@ install_skill() {
   mkdir -p "$(dirname "$ins_target")"
 
   if [ -d "$ins_target" ]; then
-    info "Atualizando skill existente..."
+    info "Atualizando $(basename "$ins_target")..."
     rm -rf "$ins_target"
   else
-    info "Instalando nova skill..."
+    info "Instalando $(basename "$ins_target")..."
   fi
 
   cp -R "$ins_source" "$ins_target"
@@ -186,49 +309,55 @@ run_validation() {
   [ "$RUN_VALIDATION" = yes ] || return 0
   [ -x "$rv_validator" ] || return 0
 
-  info "Validando a skill instalada..."
+  info "Validando $(basename "$rv_skill_dir")..."
   "$rv_validator"
 }
 
 print_banner() {
+  printf '\n'
   printf '%s%s' "$FMT_GREEN" "$FMT_BOLD"
   cat <<'EOF'
- /$$$$$$                  /$$                            /$$$$$$  /$$       /$$ /$$ /$$          
- /$$__  $$                | $$                           /$$__  $$| $$      |__/| $$| $$          
+  /$$$$$$                  /$$                            /$$$$$$  /$$       /$$ /$$ /$$
+ /$$__  $$                | $$                           /$$__  $$| $$      |__/| $$| $$
 | $$  \__/  /$$$$$$   /$$$$$$$  /$$$$$$  /$$   /$$      | $$  \__/| $$   /$$ /$$| $$| $$  /$$$$$$$
 | $$       /$$__  $$ /$$__  $$ /$$__  $$|  $$ /$$/      |  $$$$$$ | $$  /$$/| $$| $$| $$ /$$_____/
-| $$      | $$  \ $$| $$  | $$| $$$$$$$$ \  $$$$/        \____  $$| $$$$$$/ | $$| $$| $$|  $$$$$$ 
+| $$      | $$  \ $$| $$  | $$| $$$$$$$$ \  $$$$/        \____  $$| $$$$$$/ | $$| $$| $$|  $$$$$$
 | $$    $$| $$  | $$| $$  | $$| $$_____/  >$$  $$        /$$  \ $$| $$_  $$ | $$| $$| $$ \____  $$
 |  $$$$$$/|  $$$$$$/|  $$$$$$$|  $$$$$$$ /$$/\  $$      |  $$$$$$/| $$ \  $$| $$| $$| $$ /$$$$$$$/
- \______/  \______/  \_______/ \_______/|__/  \__/       \______/ |__/  \__/|__/|__/|__/|_______/ 
+ \______/  \______/  \_______/ \_______/|__/  \__/       \______/ |__/  \__/|__/|__/|__/|_______/
 EOF
   printf '%s\n' "$FMT_RESET"
 }
 
 print_success() {
-  ps_skill_name=$1
-  ps_skill_target=$2
+  ps_installed=$1
 
-  printf '\n'
   print_banner
-  success "Skill instalada ou atualizada com sucesso."
+  success "Instalação concluída."
   printf '\n'
-  printf '  Skill:   %s\n' "$ps_skill_name"
-  printf '  Destino: %s\n' "$ps_skill_target"
+  printf '  Skills:  %s\n' "$ps_installed"
+  printf '  Destino: %s/skills\n' "$AGENTS_HOME"
   printf '  Branch:  %s\n' "$BRANCH"
   printf '\n'
   info "Reinicie o Codex CLI para recarregar as skills."
   printf '\n'
-  printf '  $%s help\n' "$ps_skill_name"
+
+  for ps_name in $ps_installed; do
+    printf '  $%s help\n' "$ps_name"
+  done
   printf '\n'
 }
 
 main() {
   setup_colors
-  main_skill_name=${SKILL:-}
+  main_requested_skills=''
+  main_install_all=no
 
   while [ $# -gt 0 ]; do
     case "$1" in
+      --all)
+        main_install_all=yes
+        ;;
       --branch)
         shift
         [ $# -gt 0 ] || die "Informe uma referência após --branch."
@@ -243,24 +372,14 @@ main() {
         die "Opção desconhecida: $1"
         ;;
       *)
-        if [ -z "$main_skill_name" ]; then
-          main_skill_name=$1
-        else
-          die "Argumento inesperado: $1"
-        fi
+        case "$1" in
+          *[!a-zA-Z0-9._-]*) die "Nome de skill inválido: $1" ;;
+        esac
+        main_requested_skills="$main_requested_skills $1"
         ;;
     esac
     shift
   done
-
-  if [ -z "$main_skill_name" ]; then
-    usage
-    exit 1
-  fi
-
-  case "$main_skill_name" in
-    *[!a-zA-Z0-9._-]*) die "Nome de skill inválido: $main_skill_name" ;;
-  esac
 
   TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t codex-skills)
   trap cleanup EXIT INT TERM
@@ -269,23 +388,49 @@ main() {
   clone_repository "$main_repository"
 
   main_skills_root="$main_repository/skills"
-  main_skill_source="$main_skills_root/$main_skill_name"
+  main_index_file="$TMP_DIR/skills.index"
+  build_skill_index "$main_skills_root" "$main_index_file"
 
-  if [ ! -d "$main_skill_source" ]; then
-    list_skills "$main_skills_root"
-    die "Skill não encontrada: $main_skill_name"
+  if [ "$main_install_all" = yes ]; then
+    main_requested_skills=$(all_skill_names "$main_index_file")
+  else
+    main_requested_skills=$(printf '%s' "$main_requested_skills" | sed 's/^ *//;s/ *$//')
   fi
 
-  [ -f "$main_skill_source/SKILL.md" ] || die "A skill não contém SKILL.md."
+  if [ -z "$main_requested_skills" ]; then
+    main_requested_skills=$(select_skills_interactively "$main_skills_root" "$main_index_file")
+  fi
 
-  main_skill_target="$AGENTS_HOME/skills/$main_skill_name"
-  main_agents_target="$CODEX_HOME/agents"
+  main_installed=''
 
-  install_skill "$main_skill_source" "$main_skill_target"
-  install_agents "$main_skill_source/agents" "$main_agents_target"
-  make_scripts_executable "$main_skill_target/scripts"
-  run_validation "$main_skill_target"
-  print_success "$main_skill_name" "$main_skill_target"
+  for main_skill_name in $main_requested_skills; do
+    main_skill_source="$main_skills_root/$main_skill_name"
+
+    if [ ! -d "$main_skill_source" ]; then
+      warning "Skill não encontrada e ignorada: $main_skill_name"
+      continue
+    fi
+
+    [ -f "$main_skill_source/SKILL.md" ] || {
+      warning "Skill inválida e ignorada: $main_skill_name"
+      continue
+    }
+
+    main_skill_target="$AGENTS_HOME/skills/$main_skill_name"
+    main_agents_target="$CODEX_HOME/agents"
+
+    install_skill "$main_skill_source" "$main_skill_target"
+    install_agents "$main_skill_source/agents" "$main_agents_target"
+    make_scripts_executable "$main_skill_target/scripts"
+    run_validation "$main_skill_target"
+
+    main_installed="$main_installed $main_skill_name"
+  done
+
+  main_installed=$(printf '%s' "$main_installed" | sed 's/^ *//;s/ *$//')
+  [ -n "$main_installed" ] || die "Nenhuma skill foi instalada."
+
+  print_success "$main_installed"
 }
 
 main "$@"
