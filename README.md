@@ -1,52 +1,43 @@
 # 🧩 Codex Skills
 
-Uma coleção de **skills reutilizáveis para o Codex CLI**, organizadas para instalação global, evolução independente e compartilhamento entre diferentes projetos.
+Uma coleção de **skills reutilizáveis para o Codex CLI**, organizada para instalação global, evolução independente e compartilhamento entre diferentes projetos.
 
-Cada skill pode incluir instruções, agentes especializados, referências técnicas, templates, scripts de automação e documentação própria.
+Cada skill pode incluir:
+
+- 🧠 instruções especializadas;
+- 🤖 agentes auxiliares;
+- 📚 referências técnicas;
+- 🧱 templates;
+- ⚙️ scripts de automação;
+- ✅ validações próprias;
+- 📖 documentação dedicada.
 
 ---
 
 ## ⚡ Instalação rápida
 
-Instale uma skill diretamente pelo terminal, sem clonar o repositório.
+O instalador segue o mesmo conceito popularizado pelo Oh My Zsh: um script POSIX pode ser baixado e executado diretamente com `curl` ou `wget`.
 
 ### Com `curl`
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- react-product-builder
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" react-product-builder
 ```
 
 ### Com `wget`
 
 ```bash
-sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- react-product-builder
+sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" react-product-builder
 ```
 
-O instalador detecta automaticamente o sistema operacional.
+O argumento vazio `""` ocupa o `$0` do `sh -c`. O nome da skill é entregue ao instalador como primeiro argumento real.
 
-Sistemas suportados:
-
-- 🐧 Linux;
-- 🪟 Windows via Git Bash, MSYS2 ou Cygwin;
-- 🍎 macOS;
-- 🐧 WSL, tratado como Linux.
-
-> No WSL, a instalação é feita no `$HOME` da distribuição Linux, onde o Codex CLI normalmente está configurado.
-
-### Sobrescrever a detecção do sistema
-
-O sistema pode ser informado como segundo argumento:
+> Por segurança, em ambientes corporativos ou ao usar o projeto pela primeira vez, baixe e revise o script antes de executá-lo.
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- react-product-builder linux
-```
-
-Valores aceitos:
-
-```text
-linux
-windows
-mac
+curl -fsSLO https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh
+less install.sh
+sh install.sh react-product-builder
 ```
 
 ---
@@ -73,96 +64,151 @@ Consulte a ajuda da skill:
 $react-product-builder help
 ```
 
-### Criar um projeto Web
+### 🌐 Criar um projeto Web
 
 ```text
 $react-product-builder web Crie um sistema de gestão financeira.
 ```
 
-### Criar um aplicativo Mobile
+### 📱 Criar um aplicativo Mobile
 
 ```text
 $react-product-builder mobile Crie um aplicativo de tarefas.
 ```
 
-### Criar um produto Universal
+Os aplicativos mobile são executados e testados em dispositivo físico usando Expo Go ou Expo Development Build.
+
+### 🔄 Criar um produto Universal
 
 ```text
-$react-product-builder universal Crie um sistema de delivery para Web, Android e iOS.
+$react-product-builder universal Crie um sistema de delivery para web, Android e iOS.
 ```
-
-No modo Mobile, a validação visual ocorre em **dispositivo físico**, usando:
-
-- Expo Go;
-- Expo Development Build, quando houver módulos nativos não suportados pelo Expo Go.
 
 ---
 
-## 🛠️ Como o instalador funciona
+## 🛠️ Opções do instalador
 
-O `install.sh` executa o seguinte fluxo:
+### Instalação não interativa
 
-1. 🔎 detecta o sistema operacional;
-2. ⬇️ baixa a versão atual do repositório;
-3. ✅ valida se a skill solicitada existe;
-4. 💾 cria backup de uma instalação anterior;
-5. 📁 instala a skill em `~/.agents/skills/<nome>`;
-6. 🤖 instala os agentes em `~/.codex/agents`;
-7. 🔐 ajusta as permissões dos scripts;
-8. 🧪 executa o validador da skill;
-9. ♻️ preserva todas as outras skills já instaladas.
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  react-product-builder --unattended
+```
 
-### Diretórios padrão
+### Substituir instalação existente
+
+A versão anterior é preservada automaticamente em um diretório de backup.
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  react-product-builder --force
+```
+
+### Preservar instalação existente
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  react-product-builder --keep-existing
+```
+
+### Instalar outra branch ou tag
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  react-product-builder --branch develop
+```
+
+### Exibir ajuda
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" --help
+```
+
+---
+
+## 🔧 Configuração avançada
+
+Assim como o instalador do Oh My Zsh, o comportamento pode ser customizado com variáveis de ambiente.
+
+| Variável | Padrão | Finalidade |
+|---|---|---|
+| `REPO` | `fabiocantarelli/codex` | Repositório no formato `owner/repository` |
+| `REMOTE` | URL HTTPS do repositório | Origem Git personalizada |
+| `BRANCH` | `main` | Branch ou tag usada na instalação |
+| `CODEX_HOME` | `~/.codex` | Diretório de configuração do Codex |
+| `AGENTS_HOME` | `~/.agents` | Diretório global de agents e skills |
+| `SKILL` | vazio | Nome da skill sem usar argumento posicional |
+| `UNATTENDED` | `no` | Desabilita perguntas interativas |
+| `KEEP_EXISTING` | `no` | Mantém a instalação atual |
+| `RUN_VALIDATION` | `yes` | Executa o validador da skill |
+
+### Instalar de um fork
+
+```bash
+REPO=usuario/codex BRANCH=main \
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/usuario/codex/main/install.sh)" "" \
+  react-product-builder
+```
+
+### Definir diretório personalizado
+
+```bash
+AGENTS_HOME="$HOME/.config/codex-agents" \
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" "" \
+  react-product-builder
+```
+
+---
+
+## 🧭 Como o instalador funciona
+
+O processo foi inspirado no instalador do Oh My Zsh, mas adaptado ao modelo de skills do Codex:
+
+1. valida os argumentos;
+2. verifica se o Git está disponível;
+3. cria um diretório temporário;
+4. inicializa um repositório Git vazio;
+5. busca somente a branch ou tag solicitada com profundidade `1`;
+6. verifica se a skill existe;
+7. cria backup da instalação anterior;
+8. instala a skill em `~/.agents/skills/<nome>`;
+9. instala agentes em `~/.codex/agents`;
+10. torna scripts executáveis;
+11. executa a validação da skill;
+12. remove os arquivos temporários;
+13. apresenta as instruções finais.
+
+O instalador não remove outras skills já instaladas.
+
+---
+
+## 💾 Backups
+
+Ao atualizar uma skill, a versão existente é movida para um diretório como:
 
 ```text
-~/.agents/skills/<nome-da-skill>
-~/.codex/agents
+~/.agents/skills/react-product-builder.pre-codex-skills-2026-07-30_12-00-00
 ```
 
-Os diretórios podem ser personalizados com:
-
-```bash
-CODEX_HOME=/caminho/.codex
-AGENTS_HOME=/caminho/.agents
-```
+Arquivos de agentes que já existirem também recebem backup antes da substituição.
 
 ---
 
-## 📖 Ajuda do instalador
+## 🖥️ Compatibilidade
 
-Com `curl`:
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- help
-```
-
-Com `wget`:
-
-```bash
-sh -c "$(wget -qO- https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- help
-```
+| Ambiente | Status | Observação |
+|---|---:|---|
+| 🐧 Linux | ✅ | Suporte nativo |
+| 🐧 WSL | ✅ | Recomendado para Codex CLI no Windows |
+| 🍎 macOS | ✅ | Suporte nativo |
+| 🪟 Git Bash | ✅ | Usa o `$HOME` do ambiente Git Bash |
+| 🪟 MSYS2 | ✅ | Requer Git instalado |
+| 🪟 Cygwin | ✅ | Requer Git instalado |
+| PowerShell puro | ⚠️ | Execute pelo WSL, Git Bash ou shell POSIX |
 
 ---
 
-## 💻 Instalação local
-
-Também é possível clonar o repositório e executar o instalador localmente:
-
-```bash
-git clone https://github.com/fabiocantarelli/codex.git
-cd codex
-./install.sh react-product-builder
-```
-
-Para indicar o sistema manualmente:
-
-```bash
-./install.sh react-product-builder linux
-```
-
----
-
-## 🗂️ Estrutura do repositório
+## 📁 Estrutura do repositório
 
 ```text
 .
@@ -190,15 +236,9 @@ Para indicar o sistema manualmente:
 
 ---
 
-## 🧱 Padrão para novas skills
+## 🧱 Criando novas skills
 
-Cada skill deve ficar isolada em:
-
-```text
-skills/<nome-da-skill>/
-```
-
-Estrutura recomendada:
+Use a seguinte convenção:
 
 ```text
 skills/<nome-da-skill>/
@@ -211,59 +251,41 @@ skills/<nome-da-skill>/
 └── templates/
 ```
 
-### Arquivos obrigatórios
+### Arquivos mínimos
 
-| Arquivo | Finalidade |
-|---|---|
-| `SKILL.md` | Define nome, descrição, regras e comportamento da skill |
-| `README.md` | Documenta instalação, uso, exemplos e limitações |
-
-As demais pastas são opcionais e devem ser adicionadas somente quando agregarem valor real.
-
----
-
-## 🤝 Contribuindo
-
-Consulte o arquivo [`CONTRIBUTING.md`](CONTRIBUTING.md) para conhecer:
-
-- convenções de nomes;
-- estrutura recomendada;
-- requisitos de documentação;
-- regras para agentes e templates;
-- processo de validação.
-
----
-
-## 🔄 Atualizando uma skill
-
-Execute novamente o mesmo comando de instalação:
-
-```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh)" -- react-product-builder
-```
-
-O instalador cria um backup automático da versão anterior antes de atualizar.
-
----
-
-## 🧹 Remoção manual
-
-Para remover somente a skill:
-
-```bash
-rm -rf ~/.agents/skills/react-product-builder
-```
-
-Os agentes instalados ficam em:
+Uma skill simples precisa de:
 
 ```text
-~/.codex/agents
+SKILL.md
+README.md
 ```
 
-Eles podem ser removidos manualmente quando não forem mais utilizados.
+O instalador reconhece automaticamente novas pastas dentro de `skills/`, portanto não precisa ser alterado para cada skill adicionada.
 
 ---
 
-## 📄 Licença
+## 🔒 Segurança
 
-Adicione uma licença ao repositório antes de distribuir ou aceitar contribuições externas em maior escala.
+Executar scripts remotos exige confiança na origem. Uma alternativa mais segura é baixar, revisar e executar localmente:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/fabiocantarelli/codex/main/install.sh
+sha256sum install.sh
+less install.sh
+sh install.sh react-product-builder
+```
+
+O instalador:
+
+- não utiliza `sudo`;
+- não altera o shell padrão;
+- não instala pacotes do sistema;
+- não apaga instalações anteriores;
+- mantém backups antes de substituir arquivos;
+- opera somente nos diretórios configurados para Codex e agents.
+
+---
+
+## 🤝 Contribuição
+
+Consulte o [`CONTRIBUTING.md`](CONTRIBUTING.md) para adicionar novas skills, referências, templates ou melhorias no instalador.
